@@ -96,9 +96,6 @@ Metadata:
           - vpcId
           - vpcCidrs
 
-Conditions:
-  vpcCidrsCondition: !Not [!Equals [!Ref vpcCidrs, ""]]
-
 Resources:
   RequestsLayer:
     Type: AWS::Lambda::LayerVersion
@@ -225,7 +222,7 @@ Resources:
         region:         !Ref region
         awsAccountId:   !Ref awsAccountId
         vpcId:          !Ref vpcId
-        vpcCidrs:       !If [vpcCidrsCondition, !Ref vpcCidrs, !Ref "AWS::NoValue"]
+        vpcCidrs:       !Ref vpcCidrs
 
 Outputs:
   SubscriptionId:
