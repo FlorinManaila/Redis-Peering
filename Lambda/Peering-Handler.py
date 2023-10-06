@@ -13,6 +13,26 @@ def lambda_handler (event, context):
     
     print (event)
     
+    callEvent = {}
+    if "provider" in event['ResourceProperties']:
+        callEvent["provider"] = event['ResourceProperties']["provider"]
+    if "region" in event['ResourceProperties']:
+        callEvent["region"] = event['ResourceProperties']["region"]
+    if "awsAccountId" in event['ResourceProperties']:
+        callEvent["awsAccountId"] = event['ResourceProperties']["awsAccountId"]
+    if "vpcId" in event['ResourceProperties']:
+        callEvent["vpcId"] = event['ResourceProperties']["vpcId"]
+    if "vpcCidrs" in event['ResourceProperties']:
+        callEvent["vpcCidrs"] = event['ResourceProperties']["vpcCidrs"]
+        
+    print ("callEvent that is used as the actual API Call is bellow:")
+    print (callEvent)
+        
+    subscription_id = event['ResourceProperties']["subscriptionId"]
+    
+    print ("Subscription ID is: ")
+    print (subscription_id)
+    
     global stack_name
     global base_url
     global x_api_key
@@ -31,11 +51,12 @@ def lambda_handler (event, context):
                     'RequestId': event['RequestId'],
                     'LogicalResourceId': event['LogicalResourceId']
                     }
+                    
+    if event['RequestType'] == "Create":
+        responseValue = PostPeering(callEvent, subscription_id)
+        print (responseValue) 
+        GetResponse(responseURL, responseBody)
     
-   # if event['RequestType'] == "Create":
-   #     try:
-   #         responseValue = PostPeering(callEvent, subscription_id)
-   #         print (responseValue) 
                     
 def RetrieveSecret(secret_name):
     headers = {"X-Aws-Parameters-Secrets-Token": os.environ.get('AWS_SESSION_TOKEN')}
@@ -81,6 +102,11 @@ def PutPeering (subscription_id, event):
     response_json = response.json()
     return response_json
     Logs(response_json)
+    
+def GetResponse(responseURL, responseBody): 
+    responseBody = json.dumps(responseBody)
+    req = requests.put(responseURL, data = responseBody)
+    print ('RESPONSE BODY:n' + responseBody)
 
 #Deleting Subscription requires deleting the Database underneath it first    
 def DeleteSubscription (subscription_id, database_id):
