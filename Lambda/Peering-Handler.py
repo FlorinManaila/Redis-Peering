@@ -32,10 +32,10 @@ def lambda_handler (event, context):
                     'LogicalResourceId': event['LogicalResourceId']
                     }
     
-    if event['RequestType'] == "Create":
-        try:
-            responseValue = PostPeering(callEvent, subscription_id)
-            print (responseValue) 
+   # if event['RequestType'] == "Create":
+   #     try:
+   #         responseValue = PostPeering(callEvent, subscription_id)
+   #         print (responseValue) 
                     
 def RetrieveSecret(secret_name):
     headers = {"X-Aws-Parameters-Secrets-Token": os.environ.get('AWS_SESSION_TOKEN')}
