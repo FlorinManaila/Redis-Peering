@@ -48,10 +48,10 @@ Mappings:
         ParametersAndSecrets: arn:aws:lambda:sa-east-1:933737806257:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
 
 Parameters:
-    # version:
-    #   Type: String
-    #   Description: "[Required]. The version of Cloud Formation template that is desired to be used. The version must be available in the S3 bucket. Default value: latest. Example: v2.3.4"
-    #   Default: "latest"
+    version:
+      Type: String
+      Description: "[Required]. The version of Cloud Formation template that is desired to be used. The version must be available in the S3 bucket. Default value: latest. Example: v2.3.4"
+      Default: "latest"
     baseURL:
       Type: String
       Description: "[Required]. Base URL link used to connect to API. Example: https://api-k8s-cloudapi.qa.redislabs.com."
@@ -81,6 +81,20 @@ Parameters:
       Type: CommaDelimitedList
       Description: "[Optional]. List of VPC CIDRs. Example: '10.10.10.0/24, 10.10.20.0/24'"
       Default: "10.10.10.0/24"
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - 
+        Parameters:
+          - version
+          - baseURL
+          - subscriptionId
+          - provider
+          - region
+          - awsAccountId
+          - vpcId
+          - vpcCidrs
 
 Conditions:
   vpcCidrsCondition: !Not [!Equals [!Ref vpcCidrs, ""]]
