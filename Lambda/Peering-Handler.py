@@ -54,7 +54,13 @@ def lambda_handler (event, context):
                     
     if event['RequestType'] == "Create":
         responseValue = PostPeering(callEvent, subscription_id)
-        print (responseValue) 
+        print (responseValue)
+        peer_id, peer_description = GetPeeringId (responseValue['links'][0]['href'])
+        print ("New peering id is: " + str(peer_id))
+        print ("Description for Peering with id " + str(peer_id) + " is: " + str(peer_description))
+        
+        responseData.update({"SubscriptionId":str(subscription_id), "PeeringId":str(peer_id), "PeeringDescription":str(peer_description), "PostCall":str(callEvent)})
+        responseBody.update({"Data":responseData})
         GetResponse(responseURL, responseBody)
     
                     
@@ -84,6 +90,23 @@ def GetPeering (subscription_id):
     response_json = response.json()
     return response_json
     Logs(response_json)
+    
+def GetPeeringId (url):
+    response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+    response = response.json()
+    print (str(response))
+    count = 0
+    
+    while "resourceId" not in str(response) and count < 30:
+        time.sleep(1)
+        count += 1
+        print (str(response))
+        response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+        response = response.json()
+
+    peer_id = response["response"]["resourceId"]
+    peer_description = response["description"]
+    return peer_id, peer_description
     
 def PutPeering (subscription_id, event):
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings" + str()
