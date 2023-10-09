@@ -30,8 +30,7 @@ def lambda_handler (event, context):
         
     subscription_id = event['ResourceProperties']["subscriptionId"]
     
-    print ("Subscription ID is: ")
-    print (subscription_id)
+    print ("Subscription ID is: " + str(subscription_id))
     
     global stack_name
     global base_url
@@ -53,16 +52,59 @@ def lambda_handler (event, context):
                     }
                     
     if event['RequestType'] == "Create":
-        responseValue = PostPeering(callEvent, subscription_id)
-        print (responseValue)
-        peer_id, peer_description = GetPeeringId (responseValue['links'][0]['href'])
-        print ("New peering id is: " + str(peer_id))
-        print ("Description for Peering with id " + str(peer_id) + " is: " + str(peer_description))
+        try:
+            responseValue = PostPeering(callEvent, subscription_id)
+            print (responseValue)
+            peer_id, peer_description = GetPeeringId (responseValue['links'][0]['href'])
+            print ("New peering id is: " + str(peer_id))
+            print ("Description for Peering with id " + str(peer_id) + " is: " + str(peer_description))
+            
+            responseData.update({"SubscriptionId":str(subscription_id), "PeeringId":str(peer_id), "PeeringDescription":str(peer_description), "PostCall":str(callEvent)})
+            responseBody.update({"Data":responseData})
+            GetResponse(responseURL, responseBody)
         
-        responseData.update({"SubscriptionId":str(subscription_id), "PeeringId":str(peer_id), "PeeringDescription":str(peer_description), "PostCall":str(callEvent)})
-        responseBody.update({"Data":responseData})
-        GetResponse(responseURL, responseBody)
-    
+        except:
+            peer_error = GetPeeringError (responseValue['links'][0]['href'])
+            responseStatus = 'FAILED'
+            reason = str(peer_error)
+            if responseStatus == 'FAILED':
+                responseBody.update({"Status":responseStatus})
+                if "Reason" in str(responseBody):
+                    responseBody.update({"Reason":reason})
+                else:
+                    responseBody["Reason"] = reason
+                GetResponse(responseURL, responseBody)
+                
+    if event['RequestType'] == "Delete":
+        try:
+            cf_sub_id, cf_event, cf_peer_id, cf_peer_description = CurrentOutputs()
+        except:
+            responseStatus = 'SUCCESS'
+            responseBody.update({"Status":responseStatus})
+            GetResponse(responseURL, responseBody)
+        all_peers = GetPeering(cf_sub_id)
+        print (all_peers)
+        if str(cf_peer_id) in str(all_peers):
+            try:
+                responseValue = DeletePeering(cf_sub_id, cf_peer_id)
+                responseData.update({"SubscriptionId":str(cf_sub_id), "PeeringId":str(cf_peer_id), "PeeringDescription":str(cf_peer_description), "PostCall":str(cf_event)})
+                print (responseData)
+                responseBody.update({"Data":responseData})
+                GetResponse(responseURL, responseBody)
+            except:
+                responseStatus = 'FAILED'
+                reason = "Unable to delete peering"
+                if responseStatus == 'FAILED':
+                    responseBody.update({"Status":responseStatus})
+                    if "Reason" in str(responseBody):
+                        responseBody.update({"Reason":reason})
+                    else:
+                        responseBody["Reason"] = reason
+                    GetResponse(responseURL, responseBody)
+        else:
+            print("Peering does not exists")
+            GetResponse(responseURL, responseBody)
+
                     
 def RetrieveSecret(secret_name):
     headers = {"X-Aws-Parameters-Secrets-Token": os.environ.get('AWS_SESSION_TOKEN')}
@@ -74,6 +116,28 @@ def RetrieveSecret(secret_name):
 
     return secret
     
+def CurrentOutputs():
+    cloudformation = boto3.client('cloudformation')
+    cf_response = cloudformation.describe_stacks(StackName=stack_name)
+    for output in cf_response["Stacks"][0]["Outputs"]:
+        if "SubscriptionId" in str(output): 
+            cf_sub_id = output["OutputValue"]
+
+        if "PostCall" in str(output): 
+            cf_event = output["OutputValue"]
+
+        if "PeeringId" in str(output): 
+            cf_peer_id = output["OutputValue"]
+
+        if "PeeringDescription" in str(output): 
+            cf_peer_description = output["OutputValue"]
+            
+    print ("cf_sub_id is: " + str(cf_sub_id))
+    print ("cf_event is: " + str(cf_event))
+    print ("cf_peer_id is: " + str(cf_peer_id))
+    print ("cf_peer_description is: " + str(cf_peer_description))
+    return cf_sub_id, cf_event, cf_peer_id, cf_peer_description
+    
 def PostPeering (event, subscription_id):
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings"
     
@@ -83,7 +147,6 @@ def PostPeering (event, subscription_id):
     Logs(response_json)
     
 def GetPeering (subscription_id):
-    # If subscription_id string is empty, GET verb will print all Flexible Subscriptions
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings"
     
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
@@ -131,15 +194,25 @@ def GetResponse(responseURL, responseBody):
     req = requests.put(responseURL, data = responseBody)
     print ('RESPONSE BODY:n' + responseBody)
 
-#Deleting Subscription requires deleting the Database underneath it first    
-def DeleteSubscription (subscription_id, database_id):
-    db_url   = base_url + "/v1/subscriptions/" + subscription_id + "/databases/" + database_id
-    subs_url = base_url + "/v1/subscriptions/" + subscription_id
+def DeletePeering (subscription_id, peering_id):
+    url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings/" + str(peering_id)
     
-    response_db   = requests.delete(db_url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    response_subs = requests.delete(subs_url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    Logs(response_db.json())
-    Logs(response_subs.json())
+    response_peer = requests.delete(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+    Logs(response_peer.json())
+    
+def GetPeeringError (url):
+    response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+    response = response.json()
+    count = 0
+
+    while "processing-error" not in str(response) and count < 30:
+        time.sleep(1)
+        count += 1
+        response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+        response = response.json()
+
+    sub_error_description = response["response"]["error"]["description"]
+    return sub_error_description
     
 def Logs(response_json):
     error_url = response_json['links'][0]['href']
