@@ -155,7 +155,7 @@ def GetPeering (subscription_id):
         count += 1
         print (str(response))
         response = requests.get(response['links'][0]['href'], headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-        response = response.json()
+        response_json = response.json()
         
     print (response_json)
     return response_json
