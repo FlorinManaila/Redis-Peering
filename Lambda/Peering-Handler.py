@@ -147,7 +147,7 @@ def PostPeering (event, subscription_id):
     
 def GetPeering (subscription_id):
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings"
-    
+    count = 0
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response = response.json()
     while "vpcPeeringId" not in str(response) and count < 30:
