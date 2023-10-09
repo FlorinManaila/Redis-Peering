@@ -84,7 +84,8 @@ def lambda_handler (event, context):
             GetResponse(responseURL, responseBody)
         peer_link = GetPeering(cf_sub_id)
         print (peer_link)
-        response = requests.get(peer_link, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+        print (peer_link['links'][0]['href'])
+        response = requests.get(peer_link['links'][0]['href'], headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
         response_json = response.json()
         print (response_json)
         if str(cf_peer_id) in str(response_json):
