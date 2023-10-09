@@ -82,9 +82,12 @@ def lambda_handler (event, context):
             responseStatus = 'SUCCESS'
             responseBody.update({"Status":responseStatus})
             GetResponse(responseURL, responseBody)
-        all_peers = GetPeering(cf_sub_id)
-        print (all_peers)
-        if str(cf_peer_id) in str(all_peers):
+        peer_link = GetPeering(cf_sub_id)
+        print (peer_link)
+        response = requests.get(peer_link, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+        response_json = response.json()
+        print (response_json)
+        if str(cf_peer_id) in str(response_json):
             try:
                 responseValue = DeletePeering(cf_sub_id, cf_peer_id)
                 responseData.update({"SubscriptionId":str(cf_sub_id), "PeeringId":str(cf_peer_id), "PeeringDescription":str(cf_peer_description), "PostCall":str(cf_event)})
@@ -188,11 +191,6 @@ def PutPeering (subscription_id, event):
     response_json = response.json()
     return response_json
     Logs(response_json)
-    
-def GetResponse(responseURL, responseBody): 
-    responseBody = json.dumps(responseBody)
-    req = requests.put(responseURL, data = responseBody)
-    print ('RESPONSE BODY:n' + responseBody)
 
 def DeletePeering (subscription_id, peering_id):
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings/" + str(peering_id)
@@ -211,8 +209,13 @@ def GetPeeringError (url):
         response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
         response = response.json()
 
-    sub_error_description = response["response"]["error"]["description"]
-    return sub_error_description
+    peer_error_description = response["response"]["error"]["description"]
+    return peer_error_description
+    
+def GetResponse(responseURL, responseBody): 
+    responseBody = json.dumps(responseBody)
+    req = requests.put(responseURL, data = responseBody)
+    print ('RESPONSE BODY:n' + responseBody)
     
 def Logs(response_json):
     error_url = response_json['links'][0]['href']
