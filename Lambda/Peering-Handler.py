@@ -150,16 +150,17 @@ def GetPeering (subscription_id):
     count = 0
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response = response.json()
+    
     while "vpcPeeringId" not in str(response) and count < 30:
         time.sleep(1)
         count += 1
         print (str(response))
         response = requests.get(response['links'][0]['href'], headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-        response_json = response.json()
+        response = response.json()
         
-    print (response_json)
-    return response_json
-    Logs(response_json)
+    print (response)
+    return response
+    Logs(response)
     
 def GetPeeringId (url):
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
