@@ -82,13 +82,8 @@ def lambda_handler (event, context):
             responseStatus = 'SUCCESS'
             responseBody.update({"Status":responseStatus})
             GetResponse(responseURL, responseBody)
-        peer_link = GetPeering(cf_sub_id)
-        print (peer_link)
-        print (peer_link['links'][0]['href'])
-        response = requests.get(peer_link['links'][0]['href'], headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-        response_json = response.json()
-        print (response_json)
-        if str(cf_peer_id) in str(response_json):
+        all_peers = GetPeering(cf_sub_id)
+        if str(cf_peer_id) in str(all_peers):
             try:
                 responseValue = DeletePeering(cf_sub_id, cf_peer_id)
                 responseData.update({"SubscriptionId":str(cf_sub_id), "PeeringId":str(cf_peer_id), "PeeringDescription":str(cf_peer_description), "PostCall":str(cf_event)})
@@ -154,7 +149,15 @@ def GetPeering (subscription_id):
     url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings"
     
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
-    response_json = response.json()
+    response = response.json()
+    while "vpcPeeringId" not in str(response) and count < 30:
+        time.sleep(1)
+        count += 1
+        print (str(response))
+        response = requests.get(response['links'][0]['href'], headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
+        response = response.json()
+        
+    print (response_json)
     return response_json
     Logs(response_json)
     
