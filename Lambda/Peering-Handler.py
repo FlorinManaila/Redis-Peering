@@ -75,6 +75,33 @@ def lambda_handler (event, context):
                     responseBody["Reason"] = reason
                 GetResponse(responseURL, responseBody)
                 
+    if event['RequestType'] == "Update":
+        PhysicalResourceId = event['PhysicalResourceId']
+        responseBody.update({"PhysicalResourceId":PhysicalResourceId})
+        
+        cf_sub_id, cf_event, cf_peer_id, cf_peer_description = CurrentOutputs()
+        print ("There are the events:")
+        print (callEvent)
+        print (cf_event)
+        print ("vpcCidrs:")
+        print (callEvent["vpcCidrs"])
+        print (cf_event["vpcCidrs"])
+        
+        if callEvent["vpcCidrs"] != cf_event["vpcCidrs"]:
+            responseValue = PutPeering(cf_sub_id, cf_peer_id, callEvent)
+            cf_event = cf_event.replace("\'", "\"")
+            cf_event = json.loads(cf_event)
+            cf_event.update(callEvent)
+            print (cf_event)
+            responseData.update({"SubscriptionId":str(cf_sub_id), "PeeringId":str(cf_peer_id), "PeeringDescription":str(cf_peer_description), "PostCall":str(cf_event)})
+            responseBody.update({"Data":responseData})
+            GetResponse(responseURL, responseBody)
+        
+        else:
+            responseData.update({"SubscriptionId":str(cf_sub_id), "PeeringId":str(cf_peer_id), "PeeringDescription":str(cf_peer_description), "PostCall":str(cf_event)})
+            responseBody.update({"Data":responseData})
+            GetResponse(responseURL, responseBody)
+                
     if event['RequestType'] == "Delete":
         try:
             cf_sub_id, cf_event, cf_peer_id, cf_peer_description = CurrentOutputs()
@@ -82,6 +109,7 @@ def lambda_handler (event, context):
             responseStatus = 'SUCCESS'
             responseBody.update({"Status":responseStatus})
             GetResponse(responseURL, responseBody)
+            
         all_peers = GetPeering(cf_sub_id)
         if str(cf_peer_id) in str(all_peers):
             try:
@@ -179,20 +207,10 @@ def GetPeeringId (url):
     peer_description = response["description"]
     return peer_id, peer_description
     
-def PutPeering (subscription_id, event):
-    url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings" + str()
-    print (event)
+def PutPeering (subscription_id, peering_id, callEvent):
+    url = base_url + "/v1/subscriptions/" + str(subscription_id) + "/peerings/" + str(peering_id)
     
-    update_dict = {}
-    for key in list(event):
-    	if key == "name":
-    	    update_dict['name'] = event[key]
-    	elif key == "paymentMethodId":
-    	    update_dict['paymentMethodId'] = event[key]
-    
-    response = requests.put(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key, "Content-Type":content_type}, json = update_dict)
-    print ("PutSubscription response is:")
-    print(response)
+    response = requests.put(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key, "Content-Type":content_type}, json = callEvent)
     response_json = response.json()
     return response_json
     Logs(response_json)
