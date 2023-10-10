@@ -85,7 +85,7 @@ def lambda_handler (event, context):
         print (cf_event)
         print ("vpcCidrs:")
         print (str(callEvent["vpcCidrs"]))
-        print type(cf_event["vpcCidrs"])
+        print (type(cf_event["vpcCidrs"]))
         print (str(cf_event["vpcCidrs"][0]))
         
         if callEvent["vpcCidrs"] != cf_event["vpcCidrs"]:
