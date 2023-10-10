@@ -80,18 +80,18 @@ def lambda_handler (event, context):
         responseBody.update({"PhysicalResourceId":PhysicalResourceId})
         
         cf_sub_id, cf_event, cf_peer_id, cf_peer_description = CurrentOutputs()
+        cf_event = cf_event.replace("\'", "\"")
+        cf_event = json.loads(cf_event)
         print ("There are the events:")
         print (callEvent)
         print (cf_event)
+        
         print ("vpcCidrs:")
         print (str(callEvent["vpcCidrs"]))
-        print (type(cf_event["vpcCidrs"]))
-        print (str(cf_event["vpcCidrs"][0]))
+        print (str(cf_event["vpcCidrs"]))
         
         if callEvent["vpcCidrs"] != cf_event["vpcCidrs"]:
             responseValue = PutPeering(cf_sub_id, cf_peer_id, callEvent)
-            cf_event = cf_event.replace("\'", "\"")
-            cf_event = json.loads(cf_event)
             cf_event.update(callEvent)
             print (cf_event)
             responseData.update({"SubscriptionId":str(cf_sub_id), "PeeringId":str(cf_peer_id), "PeeringDescription":str(cf_peer_description), "PostCall":str(cf_event)})
