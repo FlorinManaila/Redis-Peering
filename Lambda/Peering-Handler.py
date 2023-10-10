@@ -84,8 +84,8 @@ def lambda_handler (event, context):
         print (callEvent)
         print (cf_event)
         print ("vpcCidrs:")
-        print (callEvent["vpcCidrs"])
-        print (cf_event["vpcCidrs"])
+        print (str(callEvent["vpcCidrs"]))
+        print (str(cf_event["vpcCidrs"]))
         
         if callEvent["vpcCidrs"] != cf_event["vpcCidrs"]:
             responseValue = PutPeering(cf_sub_id, cf_peer_id, callEvent)
