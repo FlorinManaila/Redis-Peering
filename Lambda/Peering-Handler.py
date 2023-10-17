@@ -180,7 +180,7 @@ def GetPeering (subscription_id):
     response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
     response = response.json()
     
-    while "vpcPeeringId" not in str(response) and count < 30:
+    while "vpcPeeringId" not in str(response) and count < 60:
         time.sleep(1)
         count += 1
         print (str(response))
@@ -197,7 +197,7 @@ def GetPeeringId (url):
     print (str(response))
     count = 0
     
-    while "resourceId" not in str(response) and count < 30:
+    while "resourceId" not in str(response) and count < 60:
         time.sleep(1)
         count += 1
         print (str(response))
@@ -227,7 +227,7 @@ def GetPeeringError (url):
     response = response.json()
     count = 0
 
-    while "processing-error" not in str(response) and count < 30:
+    while "processing-error" not in str(response) and count < 60:
         time.sleep(1)
         count += 1
         response = requests.get(url, headers={"accept":accept, "x-api-key":x_api_key, "x-api-secret-key":x_api_secret_key})
