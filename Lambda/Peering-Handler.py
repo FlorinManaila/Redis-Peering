@@ -6,6 +6,7 @@ import requests
 import os
 from os import environ
 
+
 accept = "application/json"
 content_type = "application/json"
 
