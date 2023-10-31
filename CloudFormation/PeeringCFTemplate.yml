@@ -1,5 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Cloud formation template for Peering
+#Mappings section is designed for AWS managed layer: AWS-Parameters-and-Secrets-Lambda-Extension-Arm64. Because the layer ARN depends on the region
+#of creation, mappings will make a one-to-one relation between ARN and region.
 Mappings:
   ParametersAndSecretsLayer:
     us-east-1:
@@ -47,6 +49,8 @@ Mappings:
     sa-east-1:
         ParametersAndSecrets: arn:aws:lambda:sa-east-1:933737806257:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:8
 
+#All the parameters that can be used accord to Swagger with 2 additional ones: version and baseURL, used to determine the CloudFormation template
+#version that is desired to be used and the base URL for the RedisCloud server.  
 Parameters:
     version:
       Type: String
@@ -79,9 +83,10 @@ Parameters:
       Default: "vpc-00e1a8cdca658ce8c"
     vpcCidrs:
       Type: CommaDelimitedList
-      Description: "[Optional]. List of VPC CIDRs. Example: '10.10.10.0/24, 10.10.20.0/24'"
-      Default: "10.10.10.0/24"
+      Description: "[Optional]. List of VPC CIDRs. Example: '10.10.10.0/24,10.10.20.0/24'"
+      Default: "10.10.10.0/24,10.10.20.0/24"
 
+#Metadata block is used to separate parameters displayed upon stack creation in a more organised order.
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -96,7 +101,9 @@ Metadata:
           - vpcId
           - vpcCidrs
 
+#Resources block creates and integrates the required AWS services within the architecture
 Resources:
+  #Creation of lambda's requests_layer using the archive from S3.
   RequestsLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
@@ -120,6 +127,7 @@ Resources:
         - arm64
         - x86_64
 
+  #Creation of lambda's secrets_layer using the archive from S3.
   SecretsLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
@@ -143,6 +151,7 @@ Resources:
         - arm64
         - x86_64
 
+  #Lambda's Execution Role created in IAM allowing CloudWatch, Step Functions, CloudFormation, Secrets Manager and S3 actions
   RedisLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -179,6 +188,7 @@ Resources:
             - s3:DeleteObject
             Resource: "*"
 
+  #EventInvokeConfig blocks are used to set the maximum retry attempts of lambda's invokation to 0. This means that each lambda will run only 1 time.
   PeeringHandlerEventInvokeConfig:
     Type: AWS::Lambda::EventInvokeConfig
     Properties: 
@@ -186,6 +196,7 @@ Resources:
       MaximumRetryAttempts: 0
       Qualifier: $LATEST
 
+  #Main Lambda function's settings and configurations
   PeeringHandler:
     Type: AWS::Lambda::Function
     Properties:
@@ -210,6 +221,7 @@ Resources:
               - !Ref version
               - "/Peering-Handler.zip"
 
+  #CloudFormation's custom resource that allows users to interact and insert values for Redis parameters in order to create relevant API Calls.
   Redis:
       Type: Custom::Peering-Handler
       Version: "1.0"
@@ -224,6 +236,8 @@ Resources:
         vpcId:          !Ref vpcId
         vpcCidrs:       !Ref vpcCidrs
 
+#Outputs section that is displayed in the Outputs' tab of the stack containing relevant information about Redis resources.
+#Those parameters are updated also upon stack Updates.   
 Outputs:
   SubscriptionId:
     Description: Subscription ID for the current stack
